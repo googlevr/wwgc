@@ -383,7 +383,7 @@ angular
 
       var updateParamQr = function() {
         var qr_div = document.getElementById('params_qrcode');
-        qr_div.innerHTML = "Generating QR code...";
+        qr_div.innerText = "Generating QR code...";
         getShortUrl($scope.data.params_uri).then(function(shortUrl) {
           var url_sans_scheme = shortUrl.replace('http://', '');
           var qr = makeQr(5, 'L', url_sans_scheme, PARAM_QR_CUSTOM_PADDING);
