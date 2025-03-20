@@ -358,45 +358,20 @@ angular
         // TODO: propagate API load error
       };
 
-      // Returns promise for shortUrl string.
-      var getShortUrl = function(longUrl) {
-        return new $q(function(resolve, reject) {
-          var params = {
-            "longDynamicLink": CONFIG.DYNAMIC_URL_BASE + "/?link=" + longUrl,
-            "suffix": {
-              "option": "SHORT"
-            }
-          };
-
-          $.post({
-            url: 'https://firebasedynamiclinks.googleapis.com/v1/shortLinks?key=' + CONFIG.GOOGLE_API_KEY,
-            data: JSON.stringify(params),
-            contentType: "application/json"}
-          ).then(function (response) {
-            resolve(response.shortLink);
-          }).catch(function (err) {
-            console.log('Short URL error: ' + err.responseText);
-            reject(reason.result.error);
-          });
-        });
-      };
-
       var updateParamQr = function() {
         var qr_div = document.getElementById('params_qrcode');
         qr_div.innerHTML = "Generating QR code...";
-        getShortUrl($scope.data.params_uri).then(function(shortUrl) {
-          var url_sans_scheme = shortUrl.replace('http://', '');
-          var qr = makeQr(5, 'L', url_sans_scheme, PARAM_QR_CUSTOM_PADDING);
-          qr_div.innerHTML = qr.createImgTag(QR_PIXELS_PER_CELL);
-          // TODO: figure out why img not complete w/o extra cycles on Firefox
+        var url_sans_scheme = $scope.data.params_uri.replace('http://', '');
+        var qr = makeQr(5, 'L', url_sans_scheme, PARAM_QR_CUSTOM_PADDING);
+        qr_div.innerHTML = qr.createImgTag(QR_PIXELS_PER_CELL);
+        // TODO: figure out why img not complete w/o extra cycles on Firefox
+        $timeout(function() {
+          rotateImg(qr_div.firstChild, -Math.PI/2);
           $timeout(function() {
-            rotateImg(qr_div.firstChild, -Math.PI/2);
-            $timeout(function() {
-              var svg = svgFromImage(qr_div.firstChild, QR_PIXELS_PER_CELL);
-              $scope.svg_params_qr_uri = 'data:image/svg+xml;base64,' +
-              btoa((new XMLSerializer()).serializeToString(svg));
-              $scope.png_params_qr_uri = qr_div.firstChild.src;
-            });
+            var svg = svgFromImage(qr_div.firstChild, QR_PIXELS_PER_CELL);
+            $scope.svg_params_qr_uri = 'data:image/svg+xml;base64,' +
+            btoa((new XMLSerializer()).serializeToString(svg));
+            $scope.png_params_qr_uri = qr_div.firstChild.src;
           });
         });
       };
@@ -525,8 +500,7 @@ angular
               $scope.wizard_step = $scope.steps.WELCOME;
               return;
             }
-            // Generate the QR.  We do this lazily since it employs the URL
-            // shortener service.
+            // Generate the QR.
             updateParamQr();
             virtual_page = window.location.pathname + 'qr_output';
             break;
@@ -612,13 +586,11 @@ angular
             // Remote link href won't be available until next $digest cycle.
             $timeout(function () {
               var longUrl = document.getElementById('remote_link').href;
-              getShortUrl(longUrl).then(function(shortUrl) {
-                $timeout(function() {
-                  var qr = makeQr(2, 'L', shortUrl);
-                  document.getElementById('remote_qrcode').innerHTML =
-                  qr.createImgTag(QR_PIXELS_PER_CELL);
-                  $scope.short_remote_link = shortUrl;
-                });
+              $timeout(function() {
+                var qr = makeQr(2, 'L', longUrl);
+                document.getElementById('remote_qrcode').innerHTML =
+                qr.createImgTag(QR_PIXELS_PER_CELL);
+                $scope.app_3d_remote_link = longUrl;
               });
             });
 
